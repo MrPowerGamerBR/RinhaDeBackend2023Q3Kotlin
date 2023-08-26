@@ -41,7 +41,7 @@ class DatabaseStuff(
             databaseName: String,
             username: String,
             password: String,
-            permits: Int = System.getenv("PUDDING_PERMITS").toInt(),
+            permits: Int? = System.getenv("PUDDING_PERMITS")?.toIntOrNull(),
             builder: HikariConfig.() -> (Unit) = {}
         ): DatabaseStuff {
             val hikariConfig = createHikariConfig(builder)
@@ -64,7 +64,7 @@ class DatabaseStuff(
                 // Example: 64 blocked coroutines due to transactions (64 = max threads in a Dispatchers.IO dispatcher) + you also have a WebSocket listening for events, when the WS tries to
                 // read incoming events, it is blocked because there isn't any available Dispatchers.IO threads!
                 cachedThreadPool.asCoroutineDispatcher(),
-                permits
+                permits ?: (hikariDataSource.maximumPoolSize * 4)
             )
         }
 
@@ -85,7 +85,7 @@ class DatabaseStuff(
             hikariConfig.leakDetectionThreshold = 30L * 1000
             hikariConfig.transactionIsolation = ISOLATION_LEVEL.name // We use repeatable read to avoid dirty and non-repeatable reads! Very useful and safe!!
 
-            hikariConfig.maximumPoolSize = System.getenv("PUDDING_POOL_SIZE").toInt()
+            hikariConfig.maximumPoolSize = System.getenv("PUDDING_POOL_SIZE")?.toInt() ?: 4
             hikariConfig.poolName = "PuddingPool"
 
             hikariConfig.apply(builder)
