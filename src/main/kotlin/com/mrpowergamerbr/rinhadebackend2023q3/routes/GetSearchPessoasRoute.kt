@@ -21,6 +21,11 @@ class GetSearchPessoasRoute(val m: RinhaDeBackend2023Q3) : BaseRoute("/pessoas")
     }
 
     override suspend fun onRequest(call: ApplicationCall) {
+        if (System.getenv("RINHA_ENABLE_SEARCH")?.toBoolean() == false) {
+            call.respondText("", status = HttpStatusCode.BadRequest)
+            return
+        }
+
         val searchQuery = call.parameters["t"]
         if (searchQuery == null) {
             call.respondText("", status = HttpStatusCode.BadRequest)
