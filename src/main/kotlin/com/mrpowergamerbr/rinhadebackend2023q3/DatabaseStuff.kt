@@ -41,7 +41,7 @@ class DatabaseStuff(
             databaseName: String,
             username: String,
             password: String,
-            permits: Int = 32,
+            permits: Int = System.getenv("PUDDING_PERMITS").toInt(),
             builder: HikariConfig.() -> (Unit) = {}
         ): DatabaseStuff {
             val hikariConfig = createHikariConfig(builder)
@@ -85,7 +85,7 @@ class DatabaseStuff(
             hikariConfig.leakDetectionThreshold = 30L * 1000
             hikariConfig.transactionIsolation = ISOLATION_LEVEL.name // We use repeatable read to avoid dirty and non-repeatable reads! Very useful and safe!!
 
-            hikariConfig.maximumPoolSize = 4
+            hikariConfig.maximumPoolSize = System.getenv("PUDDING_POOL_SIZE").toInt()
             hikariConfig.poolName = "PuddingPool"
 
             hikariConfig.apply(builder)
