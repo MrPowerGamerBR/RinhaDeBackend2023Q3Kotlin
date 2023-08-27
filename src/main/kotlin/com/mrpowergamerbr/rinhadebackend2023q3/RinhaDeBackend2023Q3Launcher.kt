@@ -31,9 +31,19 @@ object RinhaDeBackend2023Q3Launcher {
                 )
 
                 if (System.getenv("POSTGRESQL_TRGM")?.toBoolean() == true) {
-                    exec("CREATE INDEX IF NOT EXISTS apelido_trgm_idx ON pessoas USING GIST(apelido gist_trgm_ops);")
-                    exec("CREATE INDEX IF NOT EXISTS nome_trgm_idx ON pessoas USING GIST(nome gist_trgm_ops);")
-                    exec("CREATE INDEX IF NOT EXISTS stack_trgm_idx ON stacks USING GIST(name gist_trgm_ops);")
+
+                    when (System.getenv("POSTGRESQL_TRGM_INDEX_TYPE")?.uppercase() ?: error("Missing TRGM index type!")) {
+                        "GIN" -> {
+                            exec("CREATE INDEX IF NOT EXISTS apelido_trgm_idx ON pessoas USING GIN(apelido gin_trgm_ops);")
+                            exec("CREATE INDEX IF NOT EXISTS nome_trgm_idx ON pessoas USING GIN(nome gin_trgm_ops);")
+                            exec("CREATE INDEX IF NOT EXISTS stack_trgm_idx ON stacks USING GIN(name gin_trgm_ops);")
+                        }
+                        "GIST" -> {
+                            exec("CREATE INDEX IF NOT EXISTS apelido_trgm_idx ON pessoas USING GIST(apelido gist_trgm_ops);")
+                            exec("CREATE INDEX IF NOT EXISTS nome_trgm_idx ON pessoas USING GIST(nome gist_trgm_ops);")
+                            exec("CREATE INDEX IF NOT EXISTS stack_trgm_idx ON stacks USING GIST(name gist_trgm_ops);")
+                        }
+                    }
                 }
             }
         }
