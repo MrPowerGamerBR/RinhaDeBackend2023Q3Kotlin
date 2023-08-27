@@ -29,6 +29,12 @@ object RinhaDeBackend2023Q3Launcher {
                     Pessoas,
                     Stacks
                 )
+
+                if (System.getenv("POSTGRESQL_TRGM")?.toBoolean() == true) {
+                    exec("CREATE INDEX IF NOT EXISTS apelido_trgm_idx ON pessoas USING GIST(apelido gist_trgm_ops);")
+                    exec("CREATE INDEX IF NOT EXISTS nome_trgm_idx ON pessoas USING GIST(nome gist_trgm_ops);")
+                    exec("CREATE INDEX IF NOT EXISTS stack_trgm_idx ON stacks USING GIST(name gist_trgm_ops);")
+                }
             }
         }
 
