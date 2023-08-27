@@ -11,9 +11,12 @@ import io.ktor.server.response.*
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import net.perfectdreams.sequins.ktor.BaseRoute
+import org.jetbrains.exposed.exceptions.ExposedSQLException
+import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
+import org.postgresql.util.PSQLException
 import java.util.*
 
 class PostPessoasRoute(val m: RinhaDeBackend2023Q3) : BaseRoute("/pessoas") {
@@ -23,25 +26,26 @@ class PostPessoasRoute(val m: RinhaDeBackend2023Q3) : BaseRoute("/pessoas") {
             val createPessoaRequest = Json.decodeFromString<CreatePessoaRequest>(bodyAsString)
 
             val result = m.database.transaction {
-                val alreadyExists = Pessoas.select { Pessoas.apelido eq createPessoaRequest.apelido }
-                    .count() == 1L
-
-                if (alreadyExists)
-                    return@transaction CreatePessoaResult.NicknameAlreadyExists
-
-                val id = Pessoas.insertAndGetId {
-                    it[Pessoas.apelido] = createPessoaRequest.apelido
-                    it[Pessoas.nome] = createPessoaRequest.nome
-                    it[Pessoas.nascimento] = createPessoaRequest.nascimento
+                val id = try {
+                    Pessoas.insertAndGetId {
+                        it[Pessoas.apelido] = createPessoaRequest.apelido
+                        it[Pessoas.nome] = createPessoaRequest.nome
+                        it[Pessoas.nascimento] = createPessoaRequest.nascimento
+                    }
+                } catch (e: ExposedSQLException) {
+                    val cause = e.cause
+                    if (cause is PSQLException) {
+                        if (cause.serverErrorMessage?.message?.contains("duplicate key value violates unique constraint") == true)
+                        return@transaction CreatePessoaResult.NicknameAlreadyExists
+                    }
+                    throw e
                 }
 
                 val stackList = createPessoaRequest.stack
                 if (stackList != null) {
-                    for (stack in stackList) {
-                        Stacks.insert {
-                            it[Stacks.name] = stack
-                            it[Stacks.person] = id
-                        }
+                    Stacks.batchInsert(stackList, shouldReturnGeneratedValues = false) {
+                        this[Stacks.name] = it
+                        this[Stacks.person] = id
                     }
                 }
 
