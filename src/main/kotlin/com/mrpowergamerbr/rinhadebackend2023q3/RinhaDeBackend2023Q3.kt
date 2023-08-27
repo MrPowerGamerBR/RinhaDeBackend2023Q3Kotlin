@@ -3,7 +3,10 @@ package com.mrpowergamerbr.rinhadebackend2023q3
 import com.mrpowergamerbr.rinhadebackend2023q3.routes.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
+import io.ktor.server.jetty.*
+import io.ktor.server.netty.*
 import io.ktor.server.routing.*
+import io.ktor.server.tomcat.*
 
 class RinhaDeBackend2023Q3(val database: DatabaseStuff) {
     val routes = listOf(
@@ -15,7 +18,17 @@ class RinhaDeBackend2023Q3(val database: DatabaseStuff) {
     )
 
     fun start() {
-        val server = embeddedServer(CIO, System.getenv("WEBSERVER_PORT").toIntOrNull() ?: 9999) {
+        val engine = when (System.getenv("WEBSERVER_ENGINE")?.uppercase() ?: "CIO") {
+            "CIO" -> CIO
+            "JETTY" -> Jetty
+            "NETTY" -> Netty
+            "TOMCAT" -> Tomcat
+            else -> {
+                error("Unknown engine!")
+            }
+        }
+
+        val server = embeddedServer(engine, System.getenv("WEBSERVER_PORT").toIntOrNull() ?: 9999) {
             routing {
                 for (route in routes) {
                     route.register(this)

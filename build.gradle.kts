@@ -16,6 +16,9 @@ dependencies {
     // Ktor
     implementation("io.ktor:ktor-server-core:2.3.3")
     implementation("io.ktor:ktor-server-cio:2.3.3")
+    implementation("io.ktor:ktor-server-jetty:2.3.3")
+    implementation("io.ktor:ktor-server-netty:2.3.3")
+    implementation("io.ktor:ktor-server-tomcat:2.3.3")
     implementation("net.perfectdreams.sequins.ktor:base-route:1.0.4")
 
     // Databases
