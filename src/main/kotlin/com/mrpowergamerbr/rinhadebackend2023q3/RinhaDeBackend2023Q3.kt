@@ -28,7 +28,11 @@ class RinhaDeBackend2023Q3(val database: DatabaseStuff) {
             }
         }
 
-        val server = embeddedServer(engine, System.getenv("WEBSERVER_PORT").toIntOrNull() ?: 9999) {
+        val server = embeddedServer(engine, System.getenv("WEBSERVER_PORT").toIntOrNull() ?: 9999, configure = {
+            connectionGroupSize = (16 / 2 + 1)
+            workerGroupSize = (16 / 2 + 1)
+            callGroupSize = 16
+        }) {
             routing {
                 for (route in routes) {
                     route.register(this)
